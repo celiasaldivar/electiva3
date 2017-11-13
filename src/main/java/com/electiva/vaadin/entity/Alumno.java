@@ -1,18 +1,22 @@
 package com.electiva.vaadin.entity;
 
 import java.util.Date;
+import java.util.List;
 import javax.persistence.*;
+import javax.xml.bind.annotation.XmlTransient;
 import lombok.*;
 
 @EqualsAndHashCode
 @AllArgsConstructor
 @NoArgsConstructor
-@ToString
 @Setter
 @Getter
 @Entity
 @Table(name = "alumno")
 public class Alumno {
+
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "alumno")
+    private List<Nota> notaList;
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
@@ -35,4 +39,20 @@ public class Alumno {
     @Column(name = "email")
     private String email;
 
+    @XmlTransient
+    public List<Nota> getNotaList() {
+        return notaList;
+    }
+
+    public void setNotaList(List<Nota> notaList) {
+        this.notaList = notaList;
+    }
+
+    @Override
+    public String toString() {
+        return nombre + " " + apellido;
+    }
+
+    
+    
 }
