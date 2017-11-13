@@ -149,9 +149,9 @@ public class AdministrarNota extends VerticalLayout implements View {
         final FormLayout formLayout = new FormLayout();
         formLayout.setMargin(true);
 
-        final TextField textFieldCedula = new TextField("Cedula");
-        textFieldCedula.setWidth(100.0f, Sizeable.Unit.PERCENTAGE);
-        textFieldCedula.setPlaceholder("Cedula");
+        final TextField textFieldNombreAlumno = new TextField("Alumno");
+        textFieldNombreAlumno.setWidth(100.0f, Sizeable.Unit.PERCENTAGE);
+        textFieldNombreAlumno.setPlaceholder("Alumno");
 
         final TextField textFieldNombre = new TextField("Nombre");
         textFieldNombre.setWidth(100.0f, Sizeable.Unit.PERCENTAGE);
@@ -168,7 +168,7 @@ public class AdministrarNota extends VerticalLayout implements View {
         final Component componentDateField = new DateField("Fecha Nac.");
         componentDateField.setWidth(100.0f, Sizeable.Unit.PERCENTAGE);
 
-        formLayout.addComponents(textFieldCedula,
+        formLayout.addComponents(textFieldNombreAlumno,
                 textFieldNombre, textFieldApellido, textFieldEmail, componentDateField);
 
         Button buttonGuardar = new Button("Guardar", FontAwesome.SAVE);

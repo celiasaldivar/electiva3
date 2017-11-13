@@ -35,7 +35,7 @@ public class AdministrarMateria extends VerticalLayout implements View {
     private Button buttonGuardar;
     private Button buttonEliminar;
     private Button buttonModificar;
-    private Set<Materia> materiasSelecionados;
+    private Materia materiaSelecionada;
 
     public AdministrarMateria() { // Constructor de la clase
         addHeader();
@@ -90,7 +90,9 @@ public class AdministrarMateria extends VerticalLayout implements View {
         tabla.setItems(getMaterias());
         tabla.setSelectionMode(SelectionMode.SINGLE);
         tabla.addSelectionListener(event -> { // Evento que 'escucha' a las filas selecionadas
-            materiasSelecionados = event.getAllSelectedItems();
+            if (event.isUserOriginated()) {
+                materiaSelecionada = event.getFirstSelectedItem().get();
+            }
         });
         addComponent(tabla); // anadimos al VerticalLayout
     }
@@ -100,14 +102,11 @@ public class AdministrarMateria extends VerticalLayout implements View {
         Button buttonAgregar = new Button("Agregar", VaadinIcons.PLUS);
         Button buttonEliminar = new Button("Eliminar", VaadinIcons.TRASH);
         Button buttonModificar = new Button("Modificar", VaadinIcons.EDIT);
-
         buttonEliminar.addStyleName(ValoTheme.BUTTON_DANGER);
 
         buttonEliminar.addClickListener((event) -> { //Evento del boton 'Eliminar'            
-            if (null != materiasSelecionados) {
-                if (materiasSelecionados.size() > 0) {
-                    mostrarPantallaEliminarMateria();
-                }
+            if (null != materiaSelecionada) {
+                mostrarPantallaEliminarMateria(materiaSelecionada);
             } else {
                 Notification.show("Seleccione una fila para Eliminar");
             }
@@ -118,10 +117,8 @@ public class AdministrarMateria extends VerticalLayout implements View {
         });
 
         buttonModificar.addClickListener((event) -> { //Evento del boton 'Modificar'    
-            if (null != materiasSelecionados) {
-                if (materiasSelecionados.size() > 0) {
-                    mostrarPantallaModificarMateria();
-                }
+            if (null != materiaSelecionada) {
+                mostrarPantallaModificarMateria(materiaSelecionada);
             } else {
                 Notification.show("Seleccione una fila para Modificar");
             }
@@ -166,16 +163,46 @@ public class AdministrarMateria extends VerticalLayout implements View {
         Button buttonGuardar = new Button("Guardar", FontAwesome.SAVE);
         buttonGuardar.addStyleName(ValoTheme.BUTTON_PRIMARY);
         Button buttonCancelar = new Button("Cancelar", FontAwesome.CLOSE);
+        buttonCancelar.addClickListener(e -> window.close());
 
         HorizontalLayout horizontalLayout = new HorizontalLayout();
         horizontalLayout.addComponents(buttonGuardar, buttonCancelar);
         formLayout.addComponent(horizontalLayout);
+        
+        
+         buttonGuardar.addClickListener((event) -> {
+            String nombre = textFieldMateria.getValue();
+            String codigo = textFieldCodigo.getValue();
+            Integer semestre = new Integer(textFieldSemestre.getValue());
+
+            Materia materia = new Materia();
+            materia.setNombreMateria(nombre);
+            materia.setCodigoMateria(codigo);
+            materia.setSemestre(semestre);
+
+            System.out.println("" + materia);
+
+            try {
+                ManagerFactory.getEntityManager().getTransaction().begin();
+                ManagerFactory.getEntityManager().persist(materia);
+                ManagerFactory.getEntityManager().getTransaction().commit();
+                Notification.show("Se ha guardado correctamente");
+                textFieldMateria.clear();
+                textFieldCodigo.clear();
+                textFieldSemestre.clear();
+                tabla.setItems(getMaterias());
+            } catch (Exception e) {
+                Notification.show("Ha ocuarrido un error", Notification.Type.ERROR_MESSAGE);
+            }
+
+        });
+
 
         window.setContent(formLayout);
         getUI().getUI().addWindow(window);
     }
 
-    private void mostrarPantallaEliminarMateria() {
+    private void mostrarPantallaEliminarMateria(Materia materia) {
         final Window window = new Window("Eliminar Materia");
         window.setWidth("450px");
         window.setHeight("400px");
@@ -187,33 +214,51 @@ public class AdministrarMateria extends VerticalLayout implements View {
         final FormLayout formLayout = new FormLayout();
         formLayout.setMargin(true);
 
-        final TextField textFieldMateria = new TextField("Nombre Materia");
+        final TextField textFieldMateria = new TextField("Nombre Materia", materia.getIdMateria().toString());
         textFieldMateria.setWidth(100.0f, Sizeable.Unit.PERCENTAGE);
-        textFieldMateria.setPlaceholder("Nombre Materia");
+        textFieldMateria.setEnabled(false);
 
-        final TextField textFieldCodigo = new TextField("Codigo");
+        final TextField textFieldCodigo = new TextField("Codigo", materia.getCodigoMateria());
         textFieldCodigo.setWidth(100.0f, Sizeable.Unit.PERCENTAGE);
-        textFieldCodigo.setPlaceholder("Codigo");
+        textFieldCodigo.setEnabled(false);
 
-        final TextField textFieldSemestre = new TextField("Semestre");
+        final TextField textFieldSemestre = new TextField("Semestre", materia.getSemestre().toString());
         textFieldSemestre.setWidth(100.0f, Sizeable.Unit.PERCENTAGE);
-        textFieldSemestre.setPlaceholder("Semestre");
+        textFieldSemestre.setEnabled(false);
 
         formLayout.addComponents(textFieldMateria, textFieldCodigo, textFieldSemestre);
 
-        Button EliminarGuardar = new Button("Eliminar", VaadinIcons.TRASH);
-        EliminarGuardar.addStyleName(ValoTheme.BUTTON_DANGER);
+        Button buttonEliminar = new Button("Eliminar", VaadinIcons.TRASH);
+        buttonEliminar.addStyleName(ValoTheme.BUTTON_DANGER);
+        buttonEliminar.addClickListener(e -> {
+            try {
+                ManagerFactory.getEntityManager().getTransaction().begin();
+                ManagerFactory.getEntityManager().remove(materia);
+                ManagerFactory.getEntityManager().getTransaction().commit();
+                Notification.show("Se ha eliminado correctamente el registro", Notification.Type.TRAY_NOTIFICATION);
+                tabla.setItems(getMaterias());
+                textFieldMateria.clear();
+                textFieldCodigo.clear();
+                textFieldSemestre.clear();
+                materiaSelecionada = null;
+                window.close();
+            } catch (Exception ex) {
+                Notification.show("Ha ocurrido un error", Notification.Type.ERROR_MESSAGE);
+                ex.printStackTrace();
+            }
+        });
+
         Button buttonCancelar = new Button("Cancelar", VaadinIcons.EXIT);
 
         HorizontalLayout horizontalLayout = new HorizontalLayout();
-        horizontalLayout.addComponents(EliminarGuardar, buttonCancelar);
+        horizontalLayout.addComponents(buttonEliminar, buttonCancelar);
         formLayout.addComponent(horizontalLayout);
 
         window.setContent(formLayout);
         getUI().getUI().addWindow(window);
     }
 
-    private void mostrarPantallaModificarMateria() {
+    private void mostrarPantallaModificarMateria(Materia materia) {
         final Window window = new Window("Modificar Materia");
         window.setWidth("450px");
         window.setHeight("400px");
@@ -225,13 +270,13 @@ public class AdministrarMateria extends VerticalLayout implements View {
         final FormLayout formLayout = new FormLayout();
         formLayout.setMargin(true);
 
-        final TextField textFieldMateria = new TextField("Cedula");
+        final TextField textFieldMateria = new TextField("Nombre", materia.getNombreMateria());
         textFieldMateria.setWidth(100.0f, Sizeable.Unit.PERCENTAGE);
 
-        final TextField textFieldCodigo = new TextField("Nombre");
+        final TextField textFieldCodigo = new TextField("Codigo" , materia.getCodigoMateria().toString());
         textFieldCodigo.setWidth(100.0f, Sizeable.Unit.PERCENTAGE);
 
-        final TextField textFieldSemestre = new TextField("Apellido");
+        final TextField textFieldSemestre = new TextField("Semestre" , materia.getSemestre().toString());
         textFieldSemestre.setWidth(100.0f, Sizeable.Unit.PERCENTAGE);
 
         formLayout.addComponents(textFieldMateria, textFieldCodigo, textFieldSemestre);
@@ -239,6 +284,36 @@ public class AdministrarMateria extends VerticalLayout implements View {
         Button buttonGuardar = new Button("Guardar", FontAwesome.SAVE);
         buttonGuardar.addStyleName(ValoTheme.BUTTON_PRIMARY);
         Button buttonCancelar = new Button("Cancelar", FontAwesome.CLOSE);
+        buttonCancelar.addClickListener(e -> window.close());
+        
+         buttonGuardar.addClickListener(e -> {
+
+            try {
+                ManagerFactory.getEntityManager().getTransaction().begin();
+
+                String nombre = textFieldMateria.getValue();
+                String codigo = textFieldCodigo.getValue();
+                Integer semestre = new Integer(textFieldSemestre.getValue());
+
+                materia.setNombreMateria(nombre);
+                materia.setCodigoMateria(codigo);
+                materia.setSemestre(semestre);
+
+                System.out.println("" + materia);
+
+                ManagerFactory.getEntityManager().getTransaction().commit();
+                Notification.show("Se ha Modificado correctamente el registro", Notification.Type.TRAY_NOTIFICATION);
+                tabla.setItems(getMaterias());
+                textFieldMateria.clear();
+                textFieldCodigo.clear();
+                textFieldSemestre.clear();
+                materiaSelecionada = null;
+                window.close();
+            } catch (Exception ex) {
+                Notification.show("Ha ocurrido un error", Notification.Type.ERROR_MESSAGE);
+                ex.printStackTrace();
+            }
+        });
 
         HorizontalLayout horizontalLayout = new HorizontalLayout();
         horizontalLayout.addComponents(buttonGuardar, buttonCancelar);
